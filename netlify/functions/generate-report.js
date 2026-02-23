@@ -1,62 +1,21 @@
 /**
- * LISTING LENS — Generate Report (Netlify Blobs version)
+ * LISTING LENS — Generate Report (Trigger Only)
  *
- * Retrieves screenshots from Netlify Blobs (stored by upload-screenshots),
- * verifies payment, generates the report via Claude API,
- * then immediately deletes screenshots from Blobs.
+ * Validates the request, fires the background function,
+ * and immediately returns a jobId for the frontend to poll.
  *
  * Route: POST /api/generate-report
- * Body: JSON { sessionId, paymentIntentId }
- *
- * Returns: { format: 'html', reportId, html }
+ * Body:  { sessionId, paymentIntentId }
+ * Returns: { jobId, status: 'processing' }
  */
 
-const Anthropic   = require('@anthropic-ai/sdk');
-const fs          = require('fs');
-const path        = require('path');
+const crypto       = require('crypto');
 const { getStore } = require('@netlify/blobs');
 
-const VALID_CATEGORIES = ['vehicle','property','electronics','other'];
+const SITE_ID = '723a91f3-c306-48fd-b0d7-382ba89fb9a0';
 
-function loadPrompt(filename) {
-    const locations = [
-        path.join(process.cwd(), 'prompts', filename),
-        path.join(__dirname, '..', '..', 'prompts', filename),
-        path.join(__dirname, 'prompts', filename)
-    ];
-    for (const p of locations) {
-        try { return fs.readFileSync(p, 'utf-8'); } catch { /* try next */ }
-    }
-    console.warn('Prompt not found: ' + filename);
-    return '';
-}
-
-async function verifyPayment(paymentIntentId) {
-    if (process.env.BETA_MODE === 'true') return { valid: true, reason: 'beta' };
-    if (!paymentIntentId) return { valid: false, reason: 'No payment intent ID' };
-
-    try {
-        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-        const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-        if (intent.status !== 'succeeded')
-            return { valid: false, reason: 'Payment status: ' + intent.status };
-        if (![200, 500, 1000].includes(intent.amount))
-            return { valid: false, reason: 'Invalid amount: ' + intent.amount };
-        if (intent.currency !== 'aud')
-            return { valid: false, reason: 'Wrong currency: ' + intent.currency };
-        if (intent.metadata && intent.metadata.report_generated === 'true')
-            return { valid: false, reason: 'Payment already used' };
-
-        await stripe.paymentIntents.update(paymentIntentId, {
-            metadata: Object.assign({}, intent.metadata, { report_generated: 'true' })
-        });
-
-        return { valid: true };
-    } catch (err) {
-        console.error('Payment verification error:', err);
-        return { valid: false, reason: err.message };
-    }
+function blobStore() {
+    return getStore({ name: 'listing-lens-sessions', siteID: SITE_ID, token: process.env.NETLIFY_TOKEN });
 }
 
 exports.handler = async (event) => {
@@ -70,23 +29,22 @@ exports.handler = async (event) => {
     if (event.httpMethod !== 'POST')
         return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-    let sessionId = null;
-
     try {
-        const body = JSON.parse(event.body || '{}');
-        sessionId = body.sessionId;
+        const body            = JSON.parse(event.body || '{}');
+        const sessionId       = body.sessionId;
         const paymentIntentId = body.paymentIntentId;
 
         if (!sessionId)
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'sessionId required' }) };
 
-        // Retrieve session metadata from Blobs
-        const store = getStore({
-            name: 'listing-lens-sessions',
-            siteID: '723a91f3-c306-48fd-b0d7-382ba89fb9a0',
-            token: process.env.NETLIFY_TOKEN
-        });
-        const meta  = await store.get(`${sessionId}/meta`, { type: 'json' });
+        // Quick session check before firing background job
+        const store = blobStore();
+        let meta;
+        try {
+            meta = await store.get(`${sessionId}/meta`, { type: 'json' });
+        } catch (e) {
+            meta = null;
+        }
 
         if (!meta) {
             return {
@@ -98,9 +56,8 @@ exports.handler = async (event) => {
             };
         }
 
-        // Check expiry manually
         if (new Date(meta.expiresAt) < new Date()) {
-            await store.delete(`${sessionId}/meta`);
+            try { await store.delete(`${sessionId}/meta`); } catch (_) {}
             return {
                 statusCode: 410, headers,
                 body: JSON.stringify({
@@ -110,139 +67,32 @@ exports.handler = async (event) => {
             };
         }
 
-        const category       = meta.category;
-        const screenshotCount = meta.screenshotCount;
+        // Generate job ID and store initial status
+        const jobId = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+        await store.setJSON(`job/${jobId}`, { status: 'queued', queuedAt: new Date().toISOString() });
 
-        if (!VALID_CATEGORIES.includes(category))
-            return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid category in session' }) };
+        // Fire background function — do NOT await, it runs independently
+        const proto  = (event.headers['x-forwarded-proto'] || 'https');
+        const host   = event.headers['host'];
+        const bgUrl  = `${proto}://${host}/.netlify/functions/generate-report-background`;
 
-        // Verify payment before expensive work
-        const payment = await verifyPayment(paymentIntentId);
-        if (!payment.valid) {
-            return {
-                statusCode: 402, headers,
-                body: JSON.stringify({ error: 'Payment verification failed', reason: payment.reason })
-            };
-        }
+        fetch(bgUrl, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ jobId, sessionId, paymentIntentId })
+        }).catch(err => console.error('Background trigger failed:', err.message));
 
-        // Retrieve screenshots from Blobs
-        const screenshots = [];
-        for (let i = 0; i < screenshotCount; i++) {
-            try {
-                const blob     = await store.get(`${sessionId}/screenshot-${i}`, { type: 'arrayBuffer' });
-                const blobMeta = await store.getMetadata(`${sessionId}/screenshot-${i}`);
-                if (blob) {
-                    screenshots.push({
-                        base64:   Buffer.from(blob).toString('base64'),
-                        mimeType: blobMeta?.metadata?.mimeType || 'image/jpeg'
-                    });
-                }
-            } catch (e) {
-                console.warn(`Screenshot ${i} not found:`, e.message);
-            }
-        }
-
-        if (screenshots.length === 0) {
-            return {
-                statusCode: 410, headers,
-                body: JSON.stringify({
-                    error: 'Screenshots expired',
-                    message: 'Your screenshots were automatically deleted before the report could be generated. Please upload again — your payment is still valid.'
-                })
-            };
-        }
-
-        // Load system prompt — fast universal prompt for all categories
-        let systemPrompt = loadPrompt('fast-universal-v1.md');
-        if (!systemPrompt)
-            return { statusCode: 500, headers, body: JSON.stringify({ error: 'Prompt configuration error' }) };
-
-        const reportId = 'LL-' + Math.random().toString(36).substring(2, 7).toUpperCase();
-        const today    = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-
-        systemPrompt += `\n\n---\n\nOUTPUT INSTRUCTIONS:\n\nGenerate the complete report as a standalone HTML file. Include all CSS in a <style> tag.\n\nReport ID: ${reportId}\nDate: ${today}\nScreenshots: ${screenshots.length}\nCategory: ${category}\n\nIdentify country/jurisdiction from screenshots. Adapt all costs, laws, and buyer rights to local market.\n\nOutput ONLY the HTML. No markdown, no code fences. Start with <!DOCTYPE html>.`;
-
-        const messageContent = [
-            ...screenshots.map(s => ({
-                type:   'image',
-                source: { type: 'base64', media_type: s.mimeType, data: s.base64 }
-            })),
-            {
-                type: 'text',
-                text: `The customer has uploaded ${screenshots.length} screenshot(s) of a ${category} listing. Analyse thoroughly and generate the complete Listing Lens buyer intelligence report as standalone HTML.`
-            }
-        ];
-
-        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-        const response = await client.messages.create({
-            model:      'claude-sonnet-4-6',
-            max_tokens: 4000,
-            system:     systemPrompt,
-            tools:      [], // web search disabled — re-enable once on background functions
-            messages:   [{ role: 'user', content: messageContent }]
-        });
-
-        let reportHtml = response.content
-            .filter(b => b.type === 'text')
-            .map(b => b.text)
-            .join('');
-
-        reportHtml = reportHtml.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
-
-        const docStart = reportHtml.indexOf('<!DOCTYPE html>') !== -1
-            ? reportHtml.indexOf('<!DOCTYPE html>')
-            : reportHtml.indexOf('<html');
-        const docEnd = reportHtml.lastIndexOf('</html>');
-
-        if (docStart !== -1 && docEnd !== -1) {
-            reportHtml = reportHtml.substring(docStart, docEnd + 7);
-        }
-
-        // Immediately delete all blobs for this session
-        try {
-            const deletePromises = [];
-            for (let i = 0; i < screenshotCount; i++) {
-                deletePromises.push(store.delete(`${sessionId}/screenshot-${i}`));
-            }
-            deletePromises.push(store.delete(`${sessionId}/meta`));
-            await Promise.all(deletePromises);
-            console.log(`Session ${sessionId}: blobs deleted after report generation`);
-        } catch (cleanupErr) {
-            console.error(`Session ${sessionId}: blob cleanup error:`, cleanupErr.message);
-        }
-
+        // Return immediately — frontend polls /api/report-status?jobId=xxx
         return {
-            statusCode: 200, headers,
-            body: JSON.stringify({ format: 'html', reportId, html: reportHtml })
+            statusCode: 202, headers,
+            body: JSON.stringify({ jobId, status: 'processing' })
         };
 
     } catch (error) {
-        console.error('Report generation error:', error);
-
-        // Best-effort cleanup on error
-        if (sessionId) {
-            try {
-                const store = getStore({
-                    name: 'listing-lens-sessions',
-                    siteID: '723a91f3-c306-48fd-b0d7-382ba89fb9a0',
-                    token: process.env.NETLIFY_TOKEN
-                });
-                const meta  = await store.get(`${sessionId}/meta`, { type: 'json' });
-                if (meta) {
-                    const deletePromises = [];
-                    for (let i = 0; i < (meta.screenshotCount || 6); i++) {
-                        deletePromises.push(store.delete(`${sessionId}/screenshot-${i}`));
-                    }
-                    deletePromises.push(store.delete(`${sessionId}/meta`));
-                    await Promise.all(deletePromises);
-                }
-            } catch (_) { /* best effort */ }
-        }
-
+        console.error('Trigger error:', error);
         return {
             statusCode: 500, headers,
-            body: JSON.stringify({ error: 'Failed to generate report', message: error.message })
+            body: JSON.stringify({ error: 'Failed to start report generation', message: error.message })
         };
     }
 };
