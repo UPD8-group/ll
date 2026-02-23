@@ -89,7 +89,11 @@ exports.handler = async (event) => {
         const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
 
         // Store in Netlify Blobs
-        const store = getStore('listing-lens-sessions');
+        const store = getStore({
+            name: 'listing-lens-sessions',
+            siteID: '723a91f3-c306-48fd-b0d7-382ba89fb9a0',
+            token: process.env.NETLIFY_TOKEN
+        });
 
         // Store each screenshot as a blob
         await Promise.all(
