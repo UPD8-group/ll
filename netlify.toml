@@ -3,9 +3,12 @@
   functions = "netlify/functions"
 
 [functions]
-  timeout = 26
   included_files = ["prompts/**", "netlify/functions/lib/**"]
   node_bundler = "esbuild"
+
+# Per-function timeout (Pro plan supports up to 26s)
+[functions."generate-report"]
+  timeout = 26
 
 # API routes → serverless functions
 [[redirects]]
