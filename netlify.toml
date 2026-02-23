@@ -6,21 +6,20 @@
   included_files = ["prompts/**", "netlify/functions/lib/**"]
   node_bundler = "esbuild"
 
-# This single function does everything — returns 202 immediately,
-# runs Claude in the background via detached async promise
 [functions."generate-report"]
-  timeout = 900
+  timeout = 10
 
 [functions."report-status"]
   timeout = 10
 
-# API routes → serverless functions
+# Background function — Netlify detects -background suffix automatically
+# No timeout config needed — Netlify sets 15 min automatically for background functions
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
-# 404 fallback
 [[redirects]]
   from = "/*"
   to = "/404.html"
