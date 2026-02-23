@@ -152,14 +152,8 @@ exports.handler = async (event) => {
             };
         }
 
-        // Load system prompt for category
-        let systemPrompt = '';
-        if      (category === 'property')    systemPrompt = loadPrompt('combined-aus-property-v3.1.md');
-        else if (category === 'vehicle')     systemPrompt = loadPrompt('combined-aus-vehicle-v3.1.md');
-        else if (category === 'electronics') systemPrompt = loadPrompt('combined-aus-electronics-v1.md');
-        else                                 systemPrompt = loadPrompt('combined-aus-general-v1.md');
-
-        if (!systemPrompt) systemPrompt = loadPrompt('combined-aus-vehicle-v3.1.md');
+        // Load system prompt — fast universal prompt for all categories
+        let systemPrompt = loadPrompt('fast-universal-v1.md');
         if (!systemPrompt)
             return { statusCode: 500, headers, body: JSON.stringify({ error: 'Prompt configuration error' }) };
 
@@ -183,7 +177,7 @@ exports.handler = async (event) => {
 
         const response = await client.messages.create({
             model:      'claude-sonnet-4-6',
-            max_tokens: 16000,
+            max_tokens: 4000,
             system:     systemPrompt,
             tools:      [], // web search disabled — re-enable once on background functions
             messages:   [{ role: 'user', content: messageContent }]
