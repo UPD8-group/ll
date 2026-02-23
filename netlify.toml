@@ -3,6 +3,7 @@
   functions = "netlify/functions"
 
 [functions]
+  timeout = 26
   included_files = ["prompts/**", "netlify/functions/lib/**"]
   node_bundler = "esbuild"
 
