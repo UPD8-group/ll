@@ -1,12 +1,13 @@
 {
   "name": "listing-lens",
   "version": "1.0.0",
-  "description": "Listing Lens — buyer and seller intelligence platform",
+  "description": "Listing Lens \u2014 buyer and seller intelligence platform",
   "private": true,
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "busboy": "^1.6.0",
-    "stripe": "^17.7.0"
+    "stripe": "^17.7.0",
+    "@netlify/blobs": "^8.1.0"
   },
   "engines": {
     "node": ">=18.0.0"
