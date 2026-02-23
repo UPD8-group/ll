@@ -1,12 +1,8 @@
 /**
- * LISTING LENS — Upload Screenshots
+ * LISTING LENS — Upload Screenshots (Netlify Blobs version)
  *
- * Called when the user selects files and hits the payment step.
- * Stores screenshots in Upstash Redis with 15-minute TTL.
- * Returns a sessionId the frontend holds onto through payment.
- *
- * This means if Stripe's embedded element causes any page state issue,
- * the screenshots are safe in Redis and can be retrieved for report generation.
+ * Stores screenshots in Netlify Blobs instead of Upstash Redis.
+ * Blobs handle large files natively — no 431 header size issues.
  *
  * Route: POST /api/upload-screenshots
  * Body: multipart/form-data
@@ -18,12 +14,13 @@
 
 const Busboy = require('busboy');
 const crypto = require('crypto');
-const store  = require('./lib/store');
+const { getStore } = require('@netlify/blobs');
 
 const MAX_FILES      = 6;
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 const VALID_MIME     = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const VALID_CATS     = ['vehicle','property','electronics','other'];
+const SESSION_TTL_MS = 15 * 60 * 1000; // 15 minutes in ms
 
 function parseMultipart(event) {
     return new Promise((resolve, reject) => {
@@ -35,7 +32,7 @@ function parseMultipart(event) {
 
         bb.on('file', (name, stream, info) => {
             if (!VALID_MIME.includes(info.mimeType)) {
-                stream.resume(); // discard
+                stream.resume();
                 return;
             }
             const chunks = [];
@@ -49,7 +46,7 @@ function parseMultipart(event) {
                 if (chunks.length > 0 && files.length < MAX_FILES) {
                     files.push({
                         mimeType: info.mimeType,
-                        base64: Buffer.concat(chunks).toString('base64')
+                        buffer: Buffer.concat(chunks)
                     });
                 }
             });
@@ -77,19 +74,6 @@ exports.handler = async (event) => {
         return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
     try {
-        // Rate limiting
-        const ip = (event.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
-        const rate = await store.checkRateLimit(ip);
-        if (!rate.allowed) {
-            return {
-                statusCode: 429, headers,
-                body: JSON.stringify({
-                    error: 'Too many requests. Please wait an hour before trying again.',
-                    remaining: 0
-                })
-            };
-        }
-
         const { fields, files } = await parseMultipart(event);
         const category = fields.category;
 
@@ -100,18 +84,35 @@ exports.handler = async (event) => {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'No valid images uploaded' }) };
         }
 
-        // Generate a session ID — this is the user's handle through payment
+        // Generate session ID
         const sessionId = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+        const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
 
-        // Store each screenshot in Redis with 15-min TTL
+        // Store in Netlify Blobs
+        const store = getStore('listing-lens-sessions');
+
+        // Store each screenshot as a blob
         await Promise.all(
-            files.map((f, i) => store.storeScreenshot(sessionId, i, f.mimeType, f.base64))
+            files.map((f, i) =>
+                store.set(
+                    `${sessionId}/screenshot-${i}`,
+                    f.buffer,
+                    {
+                        metadata: {
+                            mimeType: f.mimeType,
+                            expiresAt
+                        }
+                    }
+                )
+            )
         );
 
         // Store session metadata
-        await store.storeSession(sessionId, {
+        await store.setJSON(`${sessionId}/meta`, {
             category,
-            screenshotCount: files.length
+            screenshotCount: files.length,
+            expiresAt,
+            createdAt: new Date().toISOString()
         });
 
         return {
@@ -121,8 +122,8 @@ exports.handler = async (event) => {
                 sessionId,
                 screenshotCount: files.length,
                 category,
-                expiresInSeconds: store.SCREENSHOT_TTL_SECONDS,
-                message: `Screenshots stored securely. Session expires in ${store.SCREENSHOT_TTL_SECONDS / 60} minutes.`
+                expiresInSeconds: 900,
+                message: `Screenshots stored securely. Session expires in 15 minutes.`
             })
         };
 
