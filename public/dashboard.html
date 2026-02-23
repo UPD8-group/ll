@@ -662,21 +662,28 @@ async function generateReport(paymentId) {
             sid = upData.sessionId;
         }
 
-        var res = await fetch('/api/generate-report', {
+        // Step 1: Trigger background job — returns immediately with jobId
+        var triggerRes = await fetch('/api/generate-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sessionId: sid, paymentIntentId: paymentId })
         });
 
-        if (!res.ok) {
-            var errData = await res.json().catch(function() { return {}; });
-            if (res.status === 410) {
+        if (!triggerRes.ok) {
+            var errData = await triggerRes.json().catch(function() { return {}; });
+            if (triggerRes.status === 410) {
                 throw new Error('EXPIRED:' + (errData.message || 'Session expired — please re-upload your screenshots.'));
             }
-            throw new Error(errData.error || 'HTTP ' + res.status);
+            throw new Error(errData.error || 'HTTP ' + triggerRes.status);
         }
 
-        var report = await res.json();
+        var triggerData = await triggerRes.json();
+        var jobId = triggerData.jobId;
+
+        if (!jobId) throw new Error('No job ID returned from server');
+
+        // Step 2: Poll for completion
+        var report = await pollForReport(jobId);
         await completeAllSteps();
         await new Promise(function(r) { setTimeout(r, 300); });
         document.getElementById('loadingOverlay').classList.remove('active');
@@ -691,10 +698,40 @@ async function generateReport(paymentId) {
         if (msg.startsWith('EXPIRED:')) {
             alert('⏱ ' + msg.replace('EXPIRED:', '') + '\n\nThis happens if more than 15 minutes passed between uploading and paying. Please re-upload — your payment intent is still valid.');
         } else {
-            alert('Something went wrong.\n\nIf payment was taken, contact hello@listinglens.app for a refund.\n\nError: ' + msg);
+            alert('Something went wrong.\n\nIf payment was taken, contact listinglens@upd8.group for a refund.\n\nError: ' + msg);
         }
         console.error(err);
     }
+}
+
+// Poll /api/report-status every 3 seconds until complete or error
+// Times out after 3 minutes (60 attempts)
+async function pollForReport(jobId) {
+    var maxAttempts = 60;
+    var interval    = 3000; // 3 seconds
+
+    for (var i = 0; i < maxAttempts; i++) {
+        await new Promise(function(r) { setTimeout(r, interval); });
+
+        var res  = await fetch('/api/report-status?jobId=' + encodeURIComponent(jobId));
+        var data = await res.json();
+
+        if (data.status === 'complete') {
+            return { format: 'html', reportId: data.reportId, html: data.html };
+        }
+
+        if (data.status === 'error') {
+            throw new Error(data.error || 'Report generation failed');
+        }
+
+        // Advance loading step UI based on time elapsed
+        var elapsed = (i + 1) * interval;
+        if (elapsed >= 4000  && elapsed < 4500)  advanceStep('ls1', 'ls2');
+        if (elapsed >= 12000 && elapsed < 12500)  advanceStep('ls2', 'ls3');
+        if (elapsed >= 25000 && elapsed < 25500)  advanceStep('ls3', 'ls4');
+    }
+
+    throw new Error('Report generation timed out. Please try again.');
 }
 
 // REPORT RENDERER
