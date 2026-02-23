@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing Lens — See a listing. Know the full story.</title>
+    <meta name="description" content="Upload a screenshot of any listing. Get a complete intelligence report in 90 seconds — market value, hidden costs, red flags, and the right questions to raise. For buyers and sellers. $2. No account needed.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #FAFAF9; --white: #FFFFFF; --ink: #0F172A; --ink-sec: #475569; --ink-muted: #94A3B8;
+            --border: #E2E8F0; --border-light: #F1F5F9;
+            --green: #16803C; --green-hover: #14662F; --green-bg: #F0FDF4; --green-light: rgba(22,128,60,0.08);
+            --amber: #B45309; --amber-bg: #FFFBEB;
+            --red: #DC2626; --red-bg: #FEF2F2;
+            --blue: #2563EB; --blue-bg: #EFF6FF;
+            --radius: 12px;
+            --font: 'DM Sans', -apple-system, sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font); background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+        /* NAV */
+        nav { position: sticky; top: 0; z-index: 100; background: rgba(250,250,249,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 40px; }
+        .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; height: 64px; }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+        .logo-icon { width: 34px; height: 34px; background: var(--green); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon svg { width: 18px; height: 18px; }
+        .logo-text { font-weight: 800; font-size: 17px; letter-spacing: -0.4px; }
+        .nav-links { display: flex; align-items: center; gap: 32px; }
+        .nav-links a { font-size: 14px; font-weight: 500; color: var(--ink-sec); text-decoration: none; transition: color 0.15s; }
+        .nav-links a:hover { color: var(--ink); }
+        .nav-cta { font-family: var(--font); font-size: 14px; font-weight: 700; padding: 10px 22px; background: var(--green); color: #fff !important; border: none; border-radius: 9px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+        .nav-cta:hover { background: var(--green-hover) !important; }
+
+        /* HERO */
+        .hero { max-width: 1200px; margin: 0 auto; padding: 100px 40px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .hero-content { max-width: 540px; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; background: var(--green-light); color: var(--green); border-radius: 100px; font-size: 13px; font-weight: 600; margin-bottom: 28px; border: 1px solid rgba(22,128,60,0.12); }
+        .hero h1 { font-size: clamp(40px, 5vw, 58px); font-weight: 800; line-height: 1.08; letter-spacing: -1.5px; margin-bottom: 24px; }
+        .hero h1 .accent { color: var(--green); }
+        .hero-desc { font-size: 18px; line-height: 1.7; color: var(--ink-sec); margin-bottom: 36px; max-width: 460px; }
+        .hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        .btn-primary { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font); font-size: 16px; font-weight: 700; padding: 16px 32px; background: var(--green); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-primary:hover { background: var(--green-hover); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(22,128,60,0.25); }
+        .btn-secondary { font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--ink-sec); text-decoration: none; transition: color 0.15s; }
+        .btn-secondary:hover { color: var(--ink); }
+
+        /* FLIP CARD */
+        .hero-visual { position: relative; }
+        .flip-card { perspective: 1200px; cursor: pointer; width: 100%; user-select: none; }
+        .flip-card-inner { position: relative; transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .flip-card-back { position: absolute; top: 0; left: 0; right: 0; transform: rotateY(180deg); }
+        .hero-report-mock { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 32px; box-shadow: 0 24px 60px rgba(15,23,42,0.08), 0 2px 8px rgba(15,23,42,0.04); overflow: hidden; }
+        .mock-listing-img { width: calc(100% + 64px); height: 160px; object-fit: cover; border-radius: 12px 12px 0 0; margin: -32px -32px 16px -32px; display: block; }
+        .mock-sample-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); background: var(--green-bg); border: 1px solid rgba(22,128,60,0.2); padding: 3px 8px; border-radius: 4px; margin-bottom: 10px; }
+        .mock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+        .mock-brand { font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; }
+        .mock-id { font-size: 9px; color: var(--ink-muted); }
+        .mock-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; line-height: 1.3; }
+        .mock-score { display: flex; align-items: center; gap: 16px; background: var(--ink); color: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+        .mock-score-num { font-size: 26px; font-weight: 800; color: #10b981; line-height: 1; }
+        .mock-score-text { font-size: 11px; color: #94a3b8; line-height: 1.4; }
+        .mock-flag { padding: 9px 12px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid; font-size: 11px; font-weight: 600; line-height: 1.3; }
+        .mock-flag.red { background: var(--red-bg); border-color: var(--red); color: #991B1B; }
+        .mock-flag.amber { background: var(--amber-bg); border-color: var(--amber); color: #92400E; }
+        .mock-flag.green { background: var(--green-bg); border-color: var(--green); color: #166534; }
+        .flip-hint { text-align: center; font-size: 12px; font-weight: 600; color: var(--green); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); opacity: 0.8; }
+        .back-mock { max-height: 600px; overflow-y: auto; scrollbar-width: none; }
+        .back-mock::-webkit-scrollbar { display: none; }
+        .mock-section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px; }
+        .mock-scores { display: flex; gap: 5px; margin-bottom: 12px; }
+        .mock-score-pill { text-align: center; flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 3px; }
+        .pill-num { display: block; font-size: 15px; font-weight: 800; color: var(--ink); }
+        .pill-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
+        .mock-comp { display: flex; justify-content: space-between; font-size: 11px; padding: 5px 10px; background: var(--bg); border-radius: 5px; margin-bottom: 3px; color: var(--ink-sec); }
+        .mock-comp span:last-child { font-weight: 700; color: var(--ink); }
+        .mock-neg { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .mock-neg-price { font-size: 20px; font-weight: 800; color: var(--ink); }
+        .mock-neg-price.green { color: #10b981; }
+        .mock-neg-dash { color: var(--ink-muted); }
+        .mock-cost-row { display: flex; justify-content: space-between; font-size: 11px; padding: 5px 0; border-bottom: 1px solid var(--border-light); color: var(--ink-sec); }
+        .mock-cost-row span:last-child { font-weight: 700; color: var(--ink); }
+        .mock-cost-row.total { border-top: 2px solid var(--ink); border-bottom: none; padding-top: 7px; margin-top: 3px; }
+        .mock-cost-row.total span { font-weight: 800; color: var(--ink); }
+        .mock-question { font-size: 11px; color: var(--ink-sec); padding: 4px 9px; background: var(--bg); border-radius: 5px; margin-bottom: 3px; border-left: 2px solid #10b981; }
+        .mock-check { font-size: 11px; color: var(--ink-sec); padding: 3px 0; }
+        .mock-rights { font-size: 11px; color: var(--ink-sec); line-height: 1.5; padding: 7px 9px; background: var(--bg); border-radius: 5px; }
+        .mock-condensed { font-size: 11px; color: var(--green); background: var(--green-bg); padding: 7px 11px; border-radius: 5px; margin-bottom: 10px; line-height: 1.5; border-left: 3px solid var(--green); }
+        .mock-spacer { height: 10px; }
+
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; gap: 48px; padding: 60px 24px 48px; }
+            .hero-content { max-width: 100%; }
+            .hero-visual { max-width: 480px; margin: 0 auto; }
+        }
+
+        /* TRUST STRIP */
+        .trust-strip { padding: 40px; border-top: 1px solid var(--border-light); }
+        .trust-strip-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 48px; flex-wrap: wrap; }
+        .trust-strip-label { font-size: 13px; color: var(--ink-muted); font-weight: 500; white-space: nowrap; }
+        .trust-icons { display: flex; gap: 40px; align-items: center; flex-wrap: wrap; }
+        .trust-icon { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-sec); font-weight: 500; }
+        .trust-icon svg { width: 18px; height: 18px; color: var(--green); flex-shrink: 0; }
+
+        /* HOW IT WORKS */
+        .how-section { padding: 80px 40px; background: var(--white); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+        .how-inner { max-width: 1200px; margin: 0 auto; }
+        .section-label { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); margin-bottom: 12px; }
+        .section-heading { font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -1px; margin-bottom: 56px; }
+        .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+        .step-card { padding: 36px 32px; }
+        .step-num { width: 40px; height: 40px; background: var(--green-bg); color: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; margin-bottom: 20px; }
+        .step-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+        .step-card p { font-size: 15px; color: var(--ink-sec); line-height: 1.65; }
+        @media (max-width: 700px) { .steps-grid { grid-template-columns: 1fr; gap: 16px; } }
+
+        /* SCREENSHOT EXPLAINER */
+        .explainer-section { padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
+        .explainer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+        @media (max-width: 800px) { .explainer-grid { grid-template-columns: 1fr; gap: 40px; } }
+        .explainer-text p { font-size: 16px; color: var(--ink-sec); line-height: 1.75; margin-bottom: 16px; }
+        .explainer-text p:last-child { margin-bottom: 0; }
+        .data-sources { display: flex; flex-direction: column; gap: 10px; }
+        .data-source { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; }
+        .data-source-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+        .data-source-text { font-size: 14px; color: var(--ink-sec); line-height: 1.4; }
+        .data-source-text strong { color: var(--ink); font-weight: 600; display: block; margin-bottom: 1px; }
+
+        /* FEATURES */
+        .features-section { padding: 80px 40px; background: var(--white); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+        .features-inner { max-width: 1200px; margin: 0 auto; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .feature-card { padding: 32px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s, box-shadow 0.2s; }
+        .feature-card:hover { border-color: var(--green); box-shadow: 0 4px 16px rgba(22,128,60,0.06); }
+        .feature-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+        .feature-icon svg { width: 22px; height: 22px; }
+        .feature-icon.green { background: var(--green-bg); color: var(--green); }
+        .feature-icon.amber { background: var(--amber-bg); color: var(--amber); }
+        .feature-icon.red { background: var(--red-bg); color: var(--red); }
+        .feature-icon.blue { background: var(--blue-bg); color: var(--blue); }
+        .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .feature-card p { font-size: 14px; color: var(--ink-sec); line-height: 1.6; }
+        @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+
+        /* FOR SELLERS */
+        .sellers-section { padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
+        .sellers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px; }
+        @media (max-width: 700px) { .sellers-grid { grid-template-columns: 1fr; } }
+        .seller-card { padding: 32px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); }
+        .seller-card-num { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 12px; letter-spacing: 0.05em; }
+        .seller-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+        .seller-card p { font-size: 15px; color: var(--ink-sec); line-height: 1.65; }
+        .seller-intro { max-width: 640px; }
+        .seller-intro p { font-size: 17px; color: var(--ink-sec); line-height: 1.75; margin-bottom: 12px; }
+
+        /* FAQ */
+        .faq-section { padding: 80px 40px; background: var(--white); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+        .faq-inner { max-width: 800px; margin: 0 auto; }
+        .faq-list { display: flex; flex-direction: column; gap: 2px; margin-top: 48px; }
+        .faq-item { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .faq-item + .faq-item { margin-top: 8px; }
+        .faq-q { width: 100%; text-align: left; background: var(--white); border: none; padding: 22px 24px; font-family: var(--font); font-size: 16px; font-weight: 700; color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; transition: background 0.15s; }
+        .faq-q:hover { background: var(--bg); }
+        .faq-q .faq-arrow { width: 20px; height: 20px; flex-shrink: 0; color: var(--green); transition: transform 0.25s; }
+        .faq-item.open .faq-arrow { transform: rotate(180deg); }
+        .faq-a { display: none; padding: 0 24px 22px; font-size: 15px; color: var(--ink-sec); line-height: 1.75; border-top: 1px solid var(--border-light); }
+        .faq-a.has-followup { padding-bottom: 0; }
+        .faq-item.open .faq-a { display: block; }
+        .faq-followup { margin-top: 12px; padding: 16px 20px; background: var(--green-bg); border-radius: 8px; font-size: 14px; color: #166534; line-height: 1.65; margin-bottom: 22px; }
+        .faq-followup strong { display: block; margin-bottom: 4px; font-weight: 700; }
+
+        /* WHY $2 */
+        .why-section { padding: 80px 40px; }
+        .why-inner { max-width: 680px; margin: 0 auto; }
+        .why-text { font-size: 15px; color: var(--ink-sec); line-height: 1.7; margin-bottom: 16px; }
+        .big-price { text-align: center; padding: 36px 0 0; }
+        .big-price-num { font-size: 64px; font-weight: 800; color: var(--green); letter-spacing: -2px; }
+        .big-price-label { font-size: 15px; color: var(--ink-muted); margin-top: 4px; }
+
+        /* PRIVACY */
+        .privacy-section { padding: 80px 40px; background: var(--white); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+        .privacy-inner { max-width: 1200px; margin: 0 auto; }
+        .privacy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+        @media (max-width: 768px) { .privacy-grid { grid-template-columns: 1fr; gap: 32px; } }
+        .privacy-intro { font-size: 17px; color: var(--ink-sec); line-height: 1.7; margin-bottom: 20px; }
+        .privacy-intro strong { color: var(--ink); }
+        .privacy-callout { background: var(--green-bg); border: 1px solid rgba(22,128,60,0.15); border-radius: var(--radius); padding: 20px 24px; font-size: 14px; color: #166534; line-height: 1.65; margin-top: 8px; }
+        .privacy-callout strong { display: block; margin-bottom: 4px; font-size: 15px; }
+        .privacy-items { display: flex; flex-direction: column; gap: 16px; }
+        .privacy-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+        .privacy-item-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--green-bg); color: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .privacy-item-icon svg { width: 18px; height: 18px; }
+        .privacy-item-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+        .privacy-item-text p { font-size: 13px; color: var(--ink-sec); line-height: 1.55; }
+
+        /* CATEGORIES */
+        .categories-section { padding: 64px 40px; background: var(--white); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+        .cat-inner { max-width: 1200px; margin: 0 auto; }
+        .cat-groups { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 8px; }
+        @media (max-width: 800px) { .cat-groups { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .cat-groups { grid-template-columns: 1fr 1fr; gap: 16px; } }
+        .cat-group { text-align: center; padding: 32px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s, box-shadow 0.2s; }
+        .cat-group:hover { border-color: var(--green); box-shadow: 0 4px 16px rgba(22,128,60,0.06); }
+        .cat-group-icon { font-size: 40px; margin-bottom: 12px; line-height: 1; }
+        .cat-group-label { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+        .cat-group-sub { font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
+
+        /* CTA */
+        .cta-section { padding: 100px 40px; text-align: center; }
+        .cta-section h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+        .cta-section p { font-size: 17px; color: var(--ink-sec); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.65; }
+        .cta-pair { display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+        .green-bar { height: 4px; background: var(--green); }
+        footer { padding: 32px 40px; border-top: 1px solid var(--border); }
+        .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .footer-left { font-size: 13px; color: var(--ink-muted); }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { font-size: 13px; color: var(--ink-muted); text-decoration: none; transition: color 0.15s; }
+        .footer-links a:hover { color: var(--ink); }
+
+        @media (max-width: 600px) {
+            nav, .trust-strip, .how-section, .explainer-section, .features-section, .sellers-section, .faq-section, .why-section, .privacy-section, .categories-section, .cta-section, footer { padding-left: 20px; padding-right: 20px; }
+            .nav-links a:not(.nav-cta) { display: none; }
+        }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .hero-content { animation: fadeUp 0.7s ease both; }
+        .hero-visual { animation: fadeUp 0.7s ease 0.15s both; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4" stroke-linecap="round"/></svg></div>
+            <span class="logo-text">Listing Lens</span>
+        </a>
+        <div class="nav-links">
+            <a href="#for-sellers">For sellers</a>
+            <a href="#faq">Good questions</a>
+            <a href="#pricing">Why $2?</a>
+            <a href="/dashboard.html" class="nav-cta">Start a Scan</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge">🇦🇺 Made in Australia · Works worldwide</div>
+        <h1>See a listing.<br><span class="accent">Know the full story.</span></h1>
+        <p class="hero-desc">Upload a screenshot of any listing and get a complete intelligence report in 90 seconds — market value, hidden costs, red flags, and the right questions to raise. Whether you're buying or selling, the full picture changes everything.</p>
+        <div class="hero-actions">
+            <a href="/dashboard.html" class="btn-primary">Start Your Scan →</a>
+            <a href="#how" class="btn-secondary">How it works</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="flip-card" onclick="this.classList.toggle('flipped')" role="button" aria-label="Click to see full sample report">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <div class="hero-report-mock">
+                        <img src="https://listinglens.app/church.jpg" alt="St Mark's Anglican Church, Ardlethan NSW" class="mock-listing-img" onerror="this.style.display='none'">
+                        <div class="mock-sample-badge">📋 Sample report</div>
+                        <div class="mock-header">
+                            <div class="mock-brand">Listing Lens</div>
+                            <div class="mock-id">Report #LL-7K4M2 · 22 Feb 2026</div>
+                        </div>
+                        <div class="mock-title">St Mark's Anglican Church — 15 Barellan St, Ardlethan NSW</div>
+                        <div class="mock-score">
+                            <div class="mock-score-num">60</div>
+                            <div class="mock-score-text">Caution Advised — heritage restrictions, conversion costs exceed purchase price, declining town.</div>
+                        </div>
+                        <div class="mock-flag red">Heritage Listed — Restricts All Modifications</div>
+                        <div class="mock-flag red">Not a Residence — Requires DA for Conversion</div>
+                        <div class="mock-flag amber">Conversion Costs Will Exceed Purchase Price</div>
+                        <div class="mock-flag green">4,048 sqm Corner Block — Subdivision Potential</div>
+                        <div class="mock-flag green">Original Heritage Features Intact</div>
+                        <div class="flip-hint">Click to see full report detail →</div>
+                    </div>
+                </div>
+                <div class="flip-card-back">
+                    <div class="hero-report-mock back-mock">
+                        <div class="mock-sample-badge">📋 Sample report</div>
+                        <div class="mock-header">
+                            <div class="mock-brand">Listing Lens</div>
+                            <div class="mock-id">Report #LL-7K4M2 · Full detail</div>
+                        </div>
+                        <div class="mock-condensed">Condensed preview — the real report includes full suburb data, scenario modelling, buyer rights, and more.</div>
+                        <div class="mock-section-label">Score Breakdown</div>
+                        <div class="mock-scores">
+                            <div class="mock-score-pill"><span class="pill-num">5</span><span class="pill-label">Price</span></div>
+                            <div class="mock-score-pill"><span class="pill-num">4</span><span class="pill-label">Condition</span></div>
+                            <div class="mock-score-pill"><span class="pill-num">3</span><span class="pill-label">Market</span></div>
+                            <div class="mock-score-pill"><span class="pill-num">7</span><span class="pill-label">Seller</span></div>
+                            <div class="mock-score-pill"><span class="pill-num">8</span><span class="pill-label">Potential</span></div>
+                        </div>
+                        <div class="mock-spacer"></div>
+                        <div class="mock-section-label">Negotiation Anchor</div>
+                        <div class="mock-neg">
+                            <span class="mock-neg-price green">$130,000</span>
+                            <span class="mock-neg-dash">—</span>
+                            <span class="mock-neg-price">$165,000</span>
+                        </div>
+                        <div class="mock-section-label">Hidden Costs</div>
+                        <div class="mock-cost-row"><span>Stamp duty (NSW)</span><span>~$5,300</span></div>
+                        <div class="mock-cost-row"><span>Heritage consultant</span><span>$2,000–$5,000</span></div>
+                        <div class="mock-cost-row"><span>DA for change of use</span><span>$15,000–$40,000</span></div>
+                        <div class="mock-cost-row total"><span>Risk-adjusted first-year total</span><span>$220,000–$280,000</span></div>
+                        <div class="mock-spacer"></div>
+                        <div class="mock-section-label">Questions to Ask</div>
+                        <div class="mock-question">What heritage restrictions apply to internal modifications?</div>
+                        <div class="mock-question">Has anyone applied for a DA for change of use to residential?</div>
+                        <div class="mock-question">Is there any asbestos in the building materials?</div>
+                        <div class="mock-spacer"></div>
+                        <div class="mock-section-label">Buyer Rights — NSW</div>
+                        <div class="mock-rights">5 business day cooling-off period (private treaty). 0.25% penalty if you withdraw.</div>
+                        <div class="flip-hint">← Click to flip back</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+    <div class="trust-strip-inner">
+        <span class="trust-strip-label">Built on trust:</span>
+        <div class="trust-icons">
+            <div class="trust-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Screenshots auto-deleted in 15 min</div>
+            <div class="trust-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg> No account required</div>
+            <div class="trust-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2v10l4.5 2.6"/><circle cx="12" cy="12" r="10"/></svg> Report in 90 seconds</div>
+            <div class="trust-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Works worldwide</div>
+        </div>
+    </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+    <div class="how-inner">
+        <p class="section-label">How it works</p>
+        <h2 class="section-heading">Three steps. Two dollars. Done.</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <h3>Screenshot the listing</h3>
+                <p>Spot something on Carsales, Domain, Rightmove, Zillow, Facebook Marketplace — anywhere. Screenshot the price, photos, and description. That's all we need.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <h3>Upload &amp; choose what to pay</h3>
+                <p>Drop your screenshots into Listing Lens, pick your category, and pay. No account, no sign-up, no subscription. Done in seconds.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <h3>Walk in fully informed</h3>
+                <p>In under 90 seconds — hidden costs, market comparison, red flags, negotiation range, and the exact questions to raise before you commit.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SCREENSHOT EXPLAINER -->
+<section class="explainer-section">
+    <div class="explainer-grid">
+        <div class="explainer-text">
+            <p class="section-label">What a screenshot tells us</p>
+            <h2 class="section-heading" style="margin-bottom:24px;">More than you'd think.</h2>
+            <p>From a listing screenshot, we can identify the platform, the location, the category, and the asking price. That's the starting point — not the finish line.</p>
+            <p>From there, Listing Lens searches public databases, government registers, market data, and web sources to build a picture that goes well beyond what the listing itself shows. It's the same research a buyer's advocate or car broker would do — done automatically in 90 seconds.</p>
+            <p>All of this information is publicly available. You could spend two hours on Google, PPSR, council websites, and auction databases — or let us do it in 90 seconds for $2. Same research. Same sources. Just faster.</p>
+        </div>
+        <div class="data-sources">
+            <div class="data-source">
+                <div class="data-source-icon" style="background:#F0FDF4;">🏛️</div>
+                <div class="data-source-text"><strong>Government registers</strong>Heritage listings, zoning, planning overlays, PPSR, vehicle recalls</div>
+            </div>
+            <div class="data-source">
+                <div class="data-source-icon" style="background:#EFF6FF;">📊</div>
+                <div class="data-source-text"><strong>Market pricing data</strong>Recent comparable sales, current listings, days on market, price history</div>
+            </div>
+            <div class="data-source">
+                <div class="data-source-icon" style="background:#FFFBEB;">📰</div>
+                <div class="data-source-text"><strong>Public records &amp; news</strong>Class actions, known defects, flood zones, neighbourhood data, council records</div>
+            </div>
+            <div class="data-source">
+                <div class="data-source-icon" style="background:#FEF2F2;">⚖️</div>
+                <div class="data-source-text"><strong>Buyer rights &amp; legal</strong>Cooling-off periods, consumer guarantees, disclosure requirements by jurisdiction</div>
+            </div>
+            <div class="data-source">
+                <div class="data-source-icon" style="background:#F0FDF4;">💰</div>
+                <div class="data-source-text"><strong>True cost of ownership</strong>Stamp duty, registration, insurance, strata, rates — calculated for your location</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section">
+    <div class="features-inner">
+        <p class="section-label">What you get</p>
+        <h2 class="section-heading">Everything you need before you make an offer.</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon green"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></div>
+                <h3>Risk Score Card</h3>
+                <p>An instant green/amber/red verdict so you know at a glance whether this listing is worth pursuing further.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon red"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+                <h3>Flags &amp; Findings</h3>
+                <p>Recalls, structural concerns, flood zones, heritage restrictions — surfaced from public sources so you can ask the right questions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                <h3>True Cost Analysis</h3>
+                <p>Stamp duty, registration, insurance, strata fees, transfer costs — the real first-year price, not the listed price.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon amber"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+                <h3>Questions to Raise</h3>
+                <p>Specific questions tailored to this exact listing — not generic advice, but the things worth raising before you sign anything.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon green"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m18.7 8-5.1 5.2-2.8-2.7L7 14.3"/></svg></div>
+                <h3>Market Comparison</h3>
+                <p>Is the asking price fair? Recent comparable sales and current listings so you know exactly where this one sits.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon amber"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 20V10m0 0l-3 3m3-3l3 3M6 20h12"/></svg></div>
+                <h3>Negotiation Anchor</h3>
+                <p>A recommended offer range based on days on market, comparable sales, and what the listing reveals about seller motivation.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOR SELLERS -->
+<section class="sellers-section" id="for-sellers">
+    <p class="section-label">For sellers</p>
+    <h2 class="section-heading">Know what a smart buyer sees.<br>Before they do.</h2>
+    <div class="seller-intro">
+        <p>Listing Lens isn't just for buyers. If you're selling a car, a property, or anything else online — you can scan your own listing to see exactly what an informed buyer would discover.</p>
+        <p>Fix what's fixable before it becomes a negotiation chip. Justify your price with data. Get serious enquiries from buyers who already understand the value.</p>
+    </div>
+    <div class="sellers-grid">
+        <div class="seller-card">
+            <div class="seller-card-num">For sellers →</div>
+            <h3>Audit your own listing</h3>
+            <p>Screenshot your listing before it goes live. See what flags appear, what the AI considers the fair market range, and what questions a prepared buyer is likely to ask. Fix what you can. Disclose what you should. Price with confidence.</p>
+        </div>
+        <div class="seller-card">
+            <div class="seller-card-num">The result →</div>
+            <h3>Fewer tyre-kickers. Better offers.</h3>
+            <p>Buyers who use Listing Lens walk in informed and ready to transact. When you've done the same audit yourself, you can answer their questions, justify your price, and close faster. Everyone wins when both sides know the full picture.</p>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+    <div class="faq-inner">
+        <p class="section-label">Good questions</p>
+        <h2 class="section-heading">Things people ask us.</h2>
+        <div class="faq-list">
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Can you really get all that from a screenshot?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a">
+                    The screenshot tells us what we're looking at — the platform, location, category, price, and condition notes. From there, Listing Lens searches public databases, government registers, and market data sources to build the full picture. The screenshot is the starting point. What we find from there is the report.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Is it legal to screenshot a listing?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a">
+                    Yes. Taking a screenshot of a publicly visible online listing for the purpose of personal research and due diligence is lawful in Australia and in most jurisdictions worldwide. You have every right to research what you're considering buying — that's exactly what Listing Lens is built for.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Is the information accurate?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a">
+                    Reports are generated by AI cross-referencing public data sources and are designed to be a thorough starting point — not a substitute for a professional inspection or legal advice. We surface what's publicly knowable. For anything that matters, verify independently and get the right expert involved.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Does the seller know I ran a report?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a has-followup">
+                    No. Your scan is completely private. We don't notify sellers, contact agents, or share any information with third parties about who ran a report on what.
+                    <div class="faq-followup">
+                        <strong>That said — sellers use Listing Lens too.</strong>
+                        Smart sellers scan their own listing before it goes live. They see exactly what a prepared buyer will find, fix what's fixable, justify their price with data, and get ahead of the hard questions. A deal where both sides walk in informed is a faster, smoother, better deal for everyone. That's the market Listing Lens is trying to build.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    What happens to my screenshots?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a">
+                    Your screenshots are held in encrypted temporary memory for a maximum of 15 minutes — just long enough to generate your report. They're deleted immediately after your report is produced, and automatically purged after 15 minutes regardless of what happens. We keep no copy. No backup. No archive.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Does it work outside Australia?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a">
+                    Yes. Listing Lens identifies the country and jurisdiction from your screenshots and adapts the entire report — costs, legal framework, buyer rights, market comparison — to your local context. We're built in Australia and strongest here, but the platform works with listings from anywhere in the world.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    Why only $2?
+                    <svg class="faq-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="faq-a">
+                    We worked out what it costs to generate a report and added a cent of margin. Similar tools charge $15–$50 for the same thing. We'd rather be the tool that everyone uses before every significant purchase than the tool that most people decide isn't worth it. At $2, there's no reason not to scan before you enquire.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- WHY $2 -->
+<section class="why-section" id="pricing">
+    <div class="why-inner">
+        <p class="section-label">Pricing</p>
+        <h2 class="section-heading" style="text-align:left;">We could charge more.<br><span style="color:var(--green);">We just chose not to.</span></h2>
+        <p class="why-text">We worked out what it costs us to generate a report — the AI, the infrastructure, the payment processing. Then we added a cent of profit. Not dollars. Cents.</p>
+        <p class="why-text">Similar services charge $15, $25, even $50. We could do the same. But we're not trying to maximise what we extract from every customer. We want to be the intelligence layer that makes the whole market work better — for buyers who want to walk in informed, and sellers who want to list with confidence.</p>
+        <p class="why-text">At $2, there's no reason not to scan a listing before you enquire. That's the whole idea — make it so affordable it becomes a reflex. See a listing, scan it, know the full picture.</p>
+        <div class="big-price">
+            <div class="big-price-num">$2</div>
+            <div class="big-price-label">Per report. Always.</div>
+        </div>
+    </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="privacy-section">
+    <div class="privacy-inner">
+        <div class="privacy-grid">
+            <div>
+                <p class="section-label">Privacy by design</p>
+                <h2 class="section-heading" style="margin-bottom:20px;">We don't want<br>your data.</h2>
+                <p class="privacy-intro">Most apps ask for your email, create an account, track your searches, and sell insights to advertisers. We thought about that model and <strong>actively chose not to build it.</strong></p>
+                <p class="privacy-intro">Listing Lens is designed from the ground up to be stateless. No accounts. No history. No profiles. Your screenshots go in, your report comes out, and then everything is gone.</p>
+                <div class="privacy-callout">
+                    <strong>This isn't a policy decision. It's an architecture decision.</strong>
+                    We hold your screenshots for a maximum of 15 minutes — just enough to survive a slow connection or payment hiccup — then they're automatically and permanently purged. Data we don't keep can't be leaked, subpoenaed, or hacked.
+                </div>
+            </div>
+            <div class="privacy-items">
+                <div class="privacy-item">
+                    <div class="privacy-item-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                    <div class="privacy-item-text">
+                        <h4>No account required</h4>
+                        <p>You don't give us your name, email, or phone number. Ever. We literally don't have a sign-up system.</p>
+                    </div>
+                </div>
+                <div class="privacy-item">
+                    <div class="privacy-item-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div>
+                    <div class="privacy-item-text">
+                        <h4>Screenshots deleted within 15 minutes</h4>
+                        <p>Held in temporary encrypted memory just long enough to generate your report, then automatically and permanently purged — no exceptions.</p>
+                    </div>
+                </div>
+                <div class="privacy-item">
+                    <div class="privacy-item-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+                    <div class="privacy-item-text">
+                        <h4>Report lives on your device</h4>
+                        <p>Generated and sent to your browser. We keep no copy on our servers — we have no record of what your report contained.</p>
+                    </div>
+                </div>
+                <div class="privacy-item">
+                    <div class="privacy-item-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><path d="M1 10h22"/></svg></div>
+                    <div class="privacy-item-text">
+                        <h4>Anonymous payment</h4>
+                        <p>Stripe processes your $2. We never see your card details and don't link payment records to report content.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="categories-section">
+    <div class="cat-inner">
+        <p class="section-label" style="text-align:center; margin-bottom:16px;">Works for</p>
+        <div class="cat-groups">
+            <div class="cat-group">
+                <div class="cat-group-icon">🚗</div>
+                <div class="cat-group-label">Vehicles</div>
+                <div class="cat-group-sub">Cars, bikes, boats, trucks, caravans, farm &amp; construction machinery</div>
+            </div>
+            <div class="cat-group">
+                <div class="cat-group-icon">🏠</div>
+                <div class="cat-group-label">Property</div>
+                <div class="cat-group-sub">Houses, apartments, land, rural &amp; commercial real estate</div>
+            </div>
+            <div class="cat-group">
+                <div class="cat-group-icon">📱</div>
+                <div class="cat-group-label">Electronics</div>
+                <div class="cat-group-sub">Phones, computers, TVs, appliances, cameras &amp; gaming</div>
+            </div>
+            <div class="cat-group">
+                <div class="cat-group-icon">🛍️</div>
+                <div class="cat-group-label">Everything Else</div>
+                <div class="cat-group-sub">Furniture, fashion, collectibles, instruments, antiques &amp; more</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <h2>Due diligence used to cost hundreds.<br>Now it costs two dollars.</h2>
+    <p>The same research a buyer's advocate does. The same audit a smart seller runs before their listing goes live. Available to everyone, for $2, in 90 seconds.</p>
+    <div class="cta-pair">
+        <a href="/dashboard.html" class="btn-primary">Start Your Scan →</a>
+        <a href="#faq" class="btn-secondary">Still have questions?</a>
+    </div>
+</section>
+
+<div class="green-bar"></div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-left">© 2026 Listing Lens · The UPD8 Group Pty Ltd · 🇦🇺 Proudly Australian</div>
+        <div class="footer-links">
+            <a href="/why.html">Why $2?</a>
+            <a href="/terms.html">Terms</a>
+            <a href="/privacy.html">Privacy</a>
+        </div>
+    </div>
+</footer>
+
+<script>
+function toggleFaq(btn) {
+    var item = btn.closest('.faq-item');
+    var wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(function(el) { el.classList.remove('open'); });
+    if (!wasOpen) item.classList.add('open');
+}
+</script>
+
+</body>
+</html>

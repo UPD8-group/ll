@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Listing Lens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #FAFAF9; --white: #FFFFFF; --ink: #0F172A; --ink-sec: #475569; --ink-muted: #94A3B8; --border: #E2E8F0; --green: #16803C; --green-bg: #F0FDF4; --font: 'DM Sans', -apple-system, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font); background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+        nav { background: rgba(250,250,249,0.92); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 40px; }
+        .nav-inner { max-width: 800px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; height: 60px; }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 700; font-size: 16px; }
+        .logo-icon { width: 32px; height: 32px; background: var(--green); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon svg { width: 18px; height: 18px; }
+        .nav-link { font-size: 14px; color: var(--ink-muted); text-decoration: none; }
+        .content { max-width: 680px; margin: 0 auto; padding: 60px 24px 80px; }
+        h1 { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+        .meta { font-size: 14px; color: var(--ink-muted); margin-bottom: 48px; }
+        .summary-box { background: var(--green-bg); border: 1px solid rgba(22,128,60,0.15); border-radius: 12px; padding: 24px 28px; margin-bottom: 48px; }
+        .summary-box h2 { font-size: 16px; font-weight: 700; color: #166534; margin-bottom: 12px; }
+        .summary-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 14px; color: #166534; line-height: 1.5; }
+        .summary-item:last-child { margin-bottom: 0; }
+        .tick { flex-shrink: 0; font-size: 16px; }
+        h2 { font-size: 18px; font-weight: 700; margin: 36px 0 12px; }
+        p { font-size: 15px; color: var(--ink-sec); line-height: 1.75; margin-bottom: 14px; }
+        .highlight { background: var(--green-bg); border-left: 3px solid var(--green); padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0; }
+        .highlight p { color: #166534; margin: 0; font-weight: 500; }
+        footer { padding: 32px 40px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--ink-muted); }
+        footer a { color: var(--green); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4" stroke-linecap="round"/></svg></div>
+            Listing Lens
+        </a>
+        <a href="/" class="nav-link">← Back to home</a>
+    </div>
+</nav>
+
+<div class="content">
+    <h1>Privacy Policy</h1>
+    <p class="meta">Listing Lens · The UPD8 Group Pty Ltd · Last updated February 2026</p>
+
+    <div class="summary-box">
+        <h2>The short version</h2>
+        <div class="summary-item"><span class="tick">✓</span> No account required. We never ask for your name or email.</div>
+        <div class="summary-item"><span class="tick">✓</span> Screenshots are deleted within 15 minutes — automatically, always, no exceptions.</div>
+        <div class="summary-item"><span class="tick">✓</span> Your report is sent to your browser. We keep no copy.</div>
+        <div class="summary-item"><span class="tick">✓</span> Payment is processed by Stripe. We never see your card details.</div>
+        <div class="summary-item"><span class="tick">✓</span> We don't use cookies for tracking. We don't sell data. We don't have advertisers.</div>
+    </div>
+
+    <h2>Who we are</h2>
+    <p>Listing Lens is a product of The UPD8 Group Pty Ltd, based in Canberra, Australia. Contact: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5f373a3333301f33362c2b363138333a312c713e2f2f">[email&#160;protected]</a></p>
+
+    <h2>What we collect and why</h2>
+    <p>When you use Listing Lens, you upload screenshots and pay $2. That's the entire interaction. Here is exactly what happens to each piece of data:</p>
+
+    <h2>Screenshots</h2>
+
+    <div class="highlight">
+        <p>Your screenshots are held in encrypted temporary memory (Upstash Redis) for a maximum of 15 minutes. They are deleted immediately after your report is generated, and automatically deleted after 15 minutes regardless of whether a report was generated. This deletion is enforced by the system — it is not a manual process and cannot be overridden.</p>
+    </div>
+
+    <p>We chose this architecture deliberately. Screenshots are the most sensitive part of what you share with us — they show what you're interested in buying, which can reveal financial circumstances and personal decisions. The 15-minute window exists purely to allow for slow connections, payment processing, and any retries. It is the minimum technically necessary to provide the service reliably.</p>
+
+    <p>Your screenshots are never written to disk, never backed up, never shared with third parties (other than the AI provider that analyses them — see below), and never used for any purpose other than generating your report.</p>
+
+    <h2>Reports</h2>
+    <p>Your report is generated by our AI and transmitted directly to your browser. We do not store, log, or retain a copy of your report. Once it has been delivered to your browser, we have no record of what it contained.</p>
+
+    <h2>Payment information</h2>
+    <p>Payments are processed by Stripe, Inc. We never see, handle, or store your card number, CVV, or any payment credentials. Stripe provides us only with a payment confirmation (success/fail) and a transaction reference. We store the transaction reference solely to prevent duplicate report generation from the same payment. This reference contains no personal information.</p>
+
+    <h2>Personal information</h2>
+    <p>We collect none. There is no account system. We do not ask for your name, email address, phone number, or any other identifying information. We do not link your payment to any identity — Stripe processes payments, and we only know that a payment was made.</p>
+
+    <h2>Cookies and tracking</h2>
+    <p>We do not use advertising cookies, analytics cookies, or tracking pixels. The only data held in your browser is temporary session state (your selected category, uploaded files, and payment reference) — this exists only for the duration of your current scan and is not transmitted to any analytics service.</p>
+
+    <h2>AI provider</h2>
+    <p>Your screenshots are sent to Anthropic's Claude API for analysis. Anthropic processes this data to generate your report. Anthropic's privacy policy applies to this processing: anthropic.com/privacy. Anthropic does not use API inputs from paid API customers to train its models by default.</p>
+
+    <h2>Third-party services</h2>
+    <p>We use the following third-party services:</p>
+    <p><strong>Stripe</strong> — payment processing. Your payment data is governed by Stripe's privacy policy.<br>
+    <strong>Anthropic</strong> — AI report generation. Screenshot data is processed by Anthropic's API.<br>
+    <strong>Upstash</strong> — temporary encrypted storage for screenshots (15-minute maximum TTL).<br>
+    <strong>Netlify</strong> — hosting and serverless functions. Standard server logs (IP address, request path, timestamp) may be retained by Netlify per their data retention policies.</p>
+
+    <h2>Data subject rights (Australian Privacy Act)</h2>
+    <p>Under the Australian Privacy Act 1988, you have the right to access personal information we hold about you and to request correction of inaccurate information. Because we collect no personal information and retain no user data beyond the 15-minute screenshot TTL, there is typically nothing to access or correct. If you believe otherwise, contact us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3058555c5c5f705c594344595e575c555e431e514040">[email&#160;protected]</a>.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We will update this policy if our data practices change. Material changes will be reflected in the "Last updated" date at the top of this page.</p>
+
+    <h2>Contact</h2>
+    <p>Privacy questio

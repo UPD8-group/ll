@@ -1,0 +1,30 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  included_files = ["prompts/**", "netlify/functions/lib/**"]
+  node_bundler = "esbuild"
+
+# API routes → serverless functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# 404 fallback
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
+# ============================================================
+# REQUIRED ENVIRONMENT VARIABLES
+# Set in Netlify UI → Site settings → Environment variables
+# ============================================================
+# ANTHROPIC_API_KEY          — Claude API key
+# STRIPE_SECRET_KEY          — Stripe secret key (sk_live_... or sk_test_...)
+# STRIPE_PUBLISHABLE_KEY     — Stripe publishable key (pk_live_... or pk_test_...)
+# UPSTASH_REDIS_REST_URL     — From Upstash dashboard (https://xxx.upstash.io)
+# UPSTASH_REDIS_REST_TOKEN   — From Upstash dashboard
+# BETA_MODE                  — "true" to skip payment during testing
