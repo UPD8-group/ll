@@ -252,7 +252,7 @@
     </div>
 
     <!-- BETA MODE -->
-    <div id="betaSection" style="display:none;">
+    <div id="betaSection" style="display:none;" aria-live="polite">
         <div class="beta-banner"><p>🧪 Beta mode — payment skipped for testing</p></div>
         <button class="submit-btn" id="betaBtn" disabled onclick="handleBetaSubmit()">Generate Report (Beta)</button>
     </div>
@@ -447,6 +447,14 @@ async function checkReady() {
     }
 
     if (ready) {
+        // If beta mode OR no Stripe key — skip payment, show beta button
+        if (betaMode || !window.STRIPE_PK) {
+            document.getElementById('betaSection').style.display = '';
+            document.getElementById('paymentSection').classList.remove('active');
+            document.getElementById('betaBtn').disabled = false;
+            if (!sessionId && !uploadInProgress) await uploadToRedis();
+            return;
+        }
         document.getElementById('paymentSection').classList.add('active');
         if (!sessionId && !uploadInProgress) {
             await uploadToRedis();
@@ -456,6 +464,7 @@ async function checkReady() {
         }
     } else {
         document.getElementById('paymentSection').classList.remove('active');
+        document.getElementById('betaSection').style.display = 'none';
     }
 }
 
