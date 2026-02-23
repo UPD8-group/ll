@@ -26,7 +26,7 @@ const SCREENSHOT_TTL_SECONDS = 15 * 60; // 900
 
 // Rate limit window and ceiling
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60; // 1 hour
-const RATE_LIMIT_MAX_REQUESTS   = 10;      // per IP per hour
+const RATE_LIMIT_MAX_REQUESTS   = 100;     // per IP per hour (raised for testing)
 
 /**
  * Raw Upstash REST call.
