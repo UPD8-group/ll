@@ -81,7 +81,11 @@ exports.handler = async (event) => {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'sessionId required' }) };
 
         // Retrieve session metadata from Blobs
-        const store = getStore('listing-lens-sessions');
+        const store = getStore({
+            name: 'listing-lens-sessions',
+            siteID: '723a91f3-c306-48fd-b0d7-382ba89fb9a0',
+            token: process.env.NETLIFY_TOKEN
+        });
         const meta  = await store.get(`${sessionId}/meta`, { type: 'json' });
 
         if (!meta) {
@@ -225,7 +229,11 @@ exports.handler = async (event) => {
         // Best-effort cleanup on error
         if (sessionId) {
             try {
-                const store = getStore('listing-lens-sessions');
+                const store = getStore({
+                    name: 'listing-lens-sessions',
+                    siteID: '723a91f3-c306-48fd-b0d7-382ba89fb9a0',
+                    token: process.env.NETLIFY_TOKEN
+                });
                 const meta  = await store.get(`${sessionId}/meta`, { type: 'json' });
                 if (meta) {
                     const deletePromises = [];
