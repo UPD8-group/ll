@@ -6,9 +6,17 @@
   included_files = ["prompts/**", "netlify/functions/lib/**"]
   node_bundler = "esbuild"
 
-# Per-function timeout (Pro plan supports up to 26s)
+# Trigger function — kicks off the background job, returns jobId immediately
 [functions."generate-report"]
-  timeout = 26
+  timeout = 10
+
+# Background function — up to 15 minutes, solves the timeout issue
+[functions."generate-report-background"]
+  timeout = 900
+
+# Status polling — fast, just reads from Blobs
+[functions."report-status"]
+  timeout = 10
 
 # API routes → serverless functions
 [[redirects]]
@@ -24,11 +32,11 @@
 
 # ============================================================
 # REQUIRED ENVIRONMENT VARIABLES
-# Set in Netlify UI → Site settings → Environment variables
 # ============================================================
 # ANTHROPIC_API_KEY          — Claude API key
-# STRIPE_SECRET_KEY          — Stripe secret key (sk_live_... or sk_test_...)
-# STRIPE_PUBLISHABLE_KEY     — Stripe publishable key (pk_live_... or pk_test_...)
-# UPSTASH_REDIS_REST_URL     — From Upstash dashboard (https://xxx.upstash.io)
-# UPSTASH_REDIS_REST_TOKEN   — From Upstash dashboard
+# NETLIFY_TOKEN              — Netlify personal access token (for Blobs)
+# STRIPE_SECRET_KEY          — Stripe secret key
+# STRIPE_PUBLISHABLE_KEY     — Stripe publishable key
 # BETA_MODE                  — "true" to skip payment during testing
+# UPSTASH_REDIS_REST_URL     — From Upstash (rate limiting only)
+# UPSTASH_REDIS_REST_TOKEN   — From Upstash (rate limiting only)
